@@ -1,63 +1,46 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+// لایەنی سەرەوەی کۆدەکە وەک خۆیەتی، تەنها ئەم گۆڕانکارییانە لە خوارەوە بکە:
+import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// لێرە زانیارییەکانی خۆت دابنێ (کە لە Settings وەرتگرتووە)
-const firebaseConfig = {
-  apiKey: "لێرە_کلیلەکە_دابنێ",
-  authDomain: "my-clipboard-app.firebaseapp.com",
-  databaseURL: "https://my-clipboard-app-default-rtdb.firebaseio.com",
-  projectId: "my-clipboard-app",
-  storageBucket: "my-clipboard-app.appspot.com",
-  messagingSenderId: "لێرە_ژمارەکە_دابنێ",
-  appId: "لێرە_ئایدی_ئەپەکە_دابنێ"
-};
+// ... (هەمان firebaseConfig و دەستپێکردنی App)
 
-// دەستپێکردن
-const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const notesRef = ref(db, 'notes');
 
-// کرداری ناردن و کۆپی
-window.saveAndCopy = function() {
-    const input = document.getElementById('textInput');
-    const text = input.value;
-
-    if (text.trim() === "") {
-        alert("تکایە دەقێک بنووسە");
-        return;
-    }
-
-    // کۆپی بۆ ناو مۆبایل/کۆمپیوتەر
-    navigator.clipboard.writeText(text).then(() => {
-        // ناردن بۆ فایەربەیس
-        push(notesRef, {
-            content: text,
-            time: Date.now()
-        });
-        input.value = "";
-        alert("کۆپی کرا و بۆ هەموو ئامێرەکان ناردرا!");
+// --- زیادکردنی فانکشنی ڕەشکردنەوە ---
+window.deleteNote = function(key) {
+    const itemRef = ref(db, `notes/${key}`);
+    remove(itemRef).then(() => {
+        alert("تێبینییەکە ڕەشکرایەوە");
     });
 };
 
-// کاتێک هەر تێکستێکی نوێ دێت، لێرە زیاد دەبێت
+// --- نوێکردنەوەی نیشاندانی لیستەکە ---
 onChildAdded(notesRef, (snapshot) => {
     const data = snapshot.val();
-    addToList(data.content);
+    const key = snapshot.key; // کلیلی هەر تێبینییەک بۆ ڕەشکردنەوە پێویستە
+    addToList(data.content, key);
 });
 
-function addToList(text) {
+// کاتێک لە ئامێرێکی تر شتێک ڕەش دەکرێتەوە، لێرەش لایببات
+onChildRemoved(notesRef, (snapshot) => {
+    const key = snapshot.key;
+    const el = document.getElementById(key);
+    if (el) el.remove();
+});
+
+function addToList(text, key) {
     const list = document.getElementById('copyList');
     const li = document.createElement('li');
+    li.id = key; // ئایدی لقاڵەکە دادەنێین بۆ ئەوەی بزانین کامەیە ڕەش دەکرێتەوە
     
     li.innerHTML = `
-        <span>${text.length > 40 ? text.substring(0, 40) + "..." : text}</span>
-        <button class="copy-item-btn" onclick="copyAgain('${text.replace(/'/g, "\\'")}')">کۆپی</button>
+        <div class="text-content">${text}</div>
+        <div class="actions">
+            <button class="copy-item-btn" onclick="copyAgain('${text.replace(/'/g, "\\'")}')">کۆپی</button>
+            <button class="delete-btn" onclick="deleteNote('${key}')">سڕینەوە</button>
+        </div>
     `;
     
     list.prepend(li);
 }
-
-window.copyAgain = function(text) {
-    navigator.clipboard.writeText(text);
-    alert("دووبارە کۆپی کرایەوە");
-};
