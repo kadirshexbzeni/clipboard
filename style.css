@@ -51,6 +51,9 @@ body {
     height: 40px;
     cursor: pointer;
     font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 textarea {
@@ -84,11 +87,30 @@ li {
     margin-bottom: 12px;
     border-radius: 10px;
     border-right: 5px solid var(--accent-color);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.note-header { display: flex; justify-content: flex-start; }
+
+.timestamp {
+    font-size: 11px;
+    color: #888;
+    background: rgba(0,0,0,0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+[data-theme="dark"] .timestamp {
+    background: rgba(255,255,255,0.1);
+    color: #aaa;
 }
 
 .text-content {
     word-break: break-all;
-    margin-bottom: 10px;
+    font-size: 15px;
+    line-height: 1.5;
 }
 
 .actions {
@@ -97,5 +119,5 @@ li {
     justify-content: flex-end;
 }
 
-.copy-item-btn { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
-.delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+.copy-item-btn { background: #28a745; color: white; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
+.delete-btn { background: #dc3545; color: white; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
