@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// !!! ئاگاداری: لێرە زانیارییە ڕاستەقینەکانی فایەربەیسەکەی خۆت دابنێ !!!
+// !!! زانیارییەکانی خۆت لێرە دابنێ !!!
 const firebaseConfig = {
   apiKey: "لێرە_کلیلەکە_دابنێ",
   authDomain: "my-clipboard-app.firebaseapp.com",
@@ -13,69 +13,62 @@ const firebaseConfig = {
   appId: "لێرە_ئایدی_ئەپەکە_دابنێ"
 };
 
-// دەستپێکردن
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const notesRef = ref(db, 'notes');
 
-// کرداری کۆپی و پاشەکەوت بۆ سێرڤەر
+// --- کرداری کۆپی و پاشەکەوت ---
 window.saveAndCopy = function() {
     const input = document.getElementById('textInput');
     const text = input.value;
-
-    if (text.trim() === "") {
-        alert("تکایە دەقێک بنووسە");
-        return;
-    }
+    if (text.trim() === "") return;
 
     navigator.clipboard.writeText(text).then(() => {
-        push(notesRef, {
-            content: text,
-            time: Date.now()
-        });
+        push(notesRef, { content: text, time: Date.now() });
         input.value = "";
     });
 };
 
-// سڕینەوەی تێبینی لە سێرڤەر
+// --- سڕینەوە ---
 window.deleteNote = function(key) {
     if(confirm("ئایا دڵنیای لە سڕینەوە؟")) {
-        const itemRef = ref(db, `notes/${key}`);
-        remove(itemRef);
+        remove(ref(db, `notes/${key}`));
     }
 };
 
-// کاتێک تێبینییەکی نوێ دێت (یان لە کاتی کردنەوەی پەڕە)
+// --- نیشاندان و Sync ---
 onChildAdded(notesRef, (snapshot) => {
-    const data = snapshot.val();
-    const key = snapshot.key;
-    addToList(data.content, key);
-});
-
-// کاتێک لە هەر ئامێرێک شتێک دەسڕێتەوە، لێرەش لایببات
-onChildRemoved(notesRef, (snapshot) => {
-    const key = snapshot.key;
-    const element = document.getElementById(key);
-    if (element) element.remove();
-});
-
-function addToList(text, key) {
     const list = document.getElementById('copyList');
     const li = document.createElement('li');
-    li.id = key; 
-    
+    li.id = snapshot.key;
     li.innerHTML = `
-        <div class="text-content">${text}</div>
+        <div class="text-content">${snapshot.val().content}</div>
         <div class="actions">
-            <button class="copy-item-btn" onclick="copyAgain('${text.replace(/'/g, "\\'")}')">کۆپی</button>
-            <button class="delete-btn" onclick="deleteNote('${key}')">سڕینەوە</button>
-        </div>
-    `;
-    
+            <button class="copy-item-btn" onclick="copyAgain('${snapshot.val().content.replace(/'/g, "\\'")}')">کۆپی</button>
+            <button class="delete-btn" onclick="deleteNote('${snapshot.key}')">سڕینەوە</button>
+        </div>`;
     list.prepend(li);
-}
+});
+
+onChildRemoved(notesRef, (snapshot) => {
+    document.getElementById(snapshot.key)?.remove();
+});
 
 window.copyAgain = function(text) {
     navigator.clipboard.writeText(text);
     alert("کۆپی کرایەوە");
 };
+
+// --- Dark Mode Logic ---
+const themeToggle = document.getElementById('theme-toggle');
+const currentTheme = localStorage.getItem('theme') || 'light';
+
+document.documentElement.setAttribute('data-theme', currentTheme);
+themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+
+themeToggle.addEventListener('click', () => {
+    let theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+});
