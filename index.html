@@ -7,20 +7,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div class="container">
         <div class="header">
             <button id="theme-toggle" class="theme-btn">🌙</button>
             <h2>Clipboard Manager</h2>
         </div>
+        
         <div class="input-group">
-            <textarea id="textInput" placeholder="دەق یان لینک لێرە دابنێ..."></textarea>
+            <textarea id="textInput" placeholder="دەقەکە لێرە بنووسە..."></textarea>
             <button onclick="saveAndCopy()" class="main-btn">کۆپی و پاشەکەوت</button>
         </div>
+
         <div class="history">
             <h3>لیستی ئامێرەکان</h3>
             <ul id="copyList"></ul>
         </div>
     </div>
+
     <script type="module" src="script.js"></script>
 </body>
 </html>
