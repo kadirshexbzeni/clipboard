@@ -2,95 +2,100 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// زانیارییەکانی فایەربەیسەکەی تۆ
+// !!! دڵنیابەرەوە کلیلەکانت لێرە ڕاستن !!!
 const firebaseConfig = {
-  apiKey: "AIzaSyC...", // لێرە کلیلی API خۆت دابنێ (لەناو ڕێکخستنی فایەربەیس هەیە)
+  apiKey: "YOUR_API_KEY",
   authDomain: "my-clipboard-app.firebaseapp.com",
   databaseURL: "https://my-clipboard-app-default-rtdb.firebaseio.com",
   projectId: "my-clipboard-app",
   storageBucket: "my-clipboard-app.appspot.com",
-  messagingSenderId: "777...", // ژمارەی خۆت لێرە دابنێ
-  appId: "1:777..." // ئایدی ئەپەکەت لێرە دابنێ
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// دەستپێکردنی فایەربەیس
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const notesRef = ref(db, 'notes');
 
-// فەنکشن بۆ ئەوەی لینکەکان بە یەک کلیک بکرێنەوە
-function formatText(text) {
-    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-    return text.replace(urlPattern, (url) => {
-        return `<a href="${url}" target="_blank" style="color: #1a73e8; text-decoration: underline;">${url}</a>`;
-    });
+// فەنکشن بۆ چاککردنی کات و گۆڕینی ژمارە درێژەکە بۆ کاتی ئاسایی
+function formatNoteTime(timeData) {
+    if (!timeData) return "بێ کات";
+    
+    // ئەگەر کاتەکە ژمارەیەکی درێژ بوو (Unix Timestamp)
+    if (!isNaN(timeData) && timeData.toString().length > 10) {
+        const d = new Date(Number(timeData));
+        return d.getHours().toString().padStart(2, '0') + ":" + 
+               d.getMinutes().toString().padStart(2, '0') + " - " + 
+               d.toLocaleDateString('en-GB');
+    }
+    return timeData; // ئەگەر خۆی پێشتر دەق بوو
 }
 
-// پاشەکەوتکردن و کۆپی کردن
+function formatText(text) {
+    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+    return text.replace(urlPattern, (url) => `<a href="${url}" target="_blank" style="color: #1a73e8; text-decoration: underline;">${url}</a>`);
+}
+
 window.saveAndCopy = function() {
     const input = document.getElementById('textInput');
     const text = input.value;
-    
     if (text.trim() === "") return;
 
-    // دروستکردنی کات و ڕێکەوت
+    // پاشەکەوتکردن بە شێوازی کاتی ئێستا
     const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-    const dateStr = now.toLocaleDateString('en-GB');
-    const fullDateTime = timeStr + " - " + dateStr;
+    const fullDateTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                         now.getMinutes().toString().padStart(2, '0') + " - " + 
+                         now.toLocaleDateString('en-GB');
 
-    // کۆپی کردن بۆ ناو کیبۆرد
     navigator.clipboard.writeText(text).then(() => {
-        // ناردن بۆ فایەربەیس
-        push(notesRef, { 
-            content: text, 
-            time: fullDateTime 
-        });
-        input.value = ""; // پاککردنەوەی شوێنی نووسینەکە
-    }).catch(err => {
-        console.error("کێشە لە کۆپی کردن هەبوو: ", err);
+        push(notesRef, { content: text, time: fullDateTime });
+        input.value = "";
     });
 };
 
-// سڕینەوەی نۆتێک
+// فەنکشنی سڕینەوە (گرنگ: دەبێت پەیوەندی بە window-ەوە هەبێت)
 window.deleteNote = function(key) {
-    if(confirm("ئایا دڵنیای لە سڕینەوەی ئەم نۆتە؟")) {
-        remove(ref(db, `notes/${key}`));
+    if(confirm("ئایا دڵنیای لە سڕینەوە؟")) {
+        const itemRef = ref(db, `notes/${key}`);
+        remove(itemRef).then(() => {
+            console.log("سڕایەوە");
+        }).catch((error) => {
+            alert("کێشە هەیە لە سڕینەوە: " + error.message);
+        });
     }
 };
 
-// نیشاندانی نۆتەکان کاتێک زیاد دەبن یان لاپەڕە Refresh دەبێتەوە
 onChildAdded(notesRef, (snapshot) => {
     const list = document.getElementById('copyList');
-    const li = document.createElement('li');
     const data = snapshot.val();
-    li.id = snapshot.key;
+    const key = snapshot.key;
+    
+    const li = document.createElement('li');
+    li.id = key;
     
     li.innerHTML = `
         <div class="note-header">
-            <span class="timestamp">${data.time || 'پێشتر'}</span>
+            <span class="timestamp">${formatNoteTime(data.time)}</span>
         </div>
         <div class="text-content">${formatText(data.content)}</div>
         <div class="actions">
-            <button class="copy-item-btn" onclick="copyAgain('${data.content.replace(/'/g, "\\'")}')">کۆپی</button>
-            <button class="delete-btn" onclick="deleteNote('${snapshot.key}')">سڕینەوە</button>
+            <button class="copy-item-btn" onclick="copyAgain(\`${data.content.replace(/`/g, "\\`")}\`)">کۆپی</button>
+            <button class="delete-btn" onclick="deleteNote('${key}')">سڕینەوە</button>
         </div>`;
-    list.prepend(li); // نوێترین نۆت دەخاتە سەرەوە
+    list.prepend(li);
 });
 
-// سڕینەوەی نۆتەکە لەسەر شاشە کاتێک لە داتابەیس دەسڕێتەوە
 onChildRemoved(notesRef, (snapshot) => {
     const el = document.getElementById(snapshot.key);
     if(el) el.remove();
 });
 
-// دووبارە کۆپی کردنەوە
 window.copyAgain = function(text) {
     navigator.clipboard.writeText(text);
-    alert("کۆپی کرایەوە بۆ کیبۆردەکەت");
+    alert("کۆپی کرایەوە");
 };
 
-// سیستەمی ڕەنگی تاریک و ڕوون (Dark Mode)
+// Dark Mode
 const themeToggle = document.getElementById('theme-toggle');
 const currentTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', currentTheme);
