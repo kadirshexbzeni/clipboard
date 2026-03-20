@@ -100,6 +100,7 @@ li {
     background: rgba(0,0,0,0.05);
     padding: 2px 8px;
     border-radius: 4px;
+    font-family: sans-serif;
 }
 
 [data-theme="dark"] .timestamp {
