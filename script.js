@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
+const https://my-clipboard-app-default-rtdb.firebaseio.com/ = {
   apiKey: "YOUR_API_KEY",
   authDomain: "my-clipboard-app.firebaseapp.com",
   databaseURL: "https://my-clipboard-app-default-rtdb.firebaseio.com",
