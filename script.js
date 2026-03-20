@@ -2,8 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const https://my-clipboard-app-default-rtdb.firebaseio.com/ = {
-  apiKey: "YOUR_API_KEY",
+// زانیارییەکانی پڕۆژەکەی تۆ
+const firebaseConfig = {
+  apiKey: "AIzaSy...", // لێرە کلیلی API خۆت دابنێ کە لە فایەربەیس وەرتگرتووە
   authDomain: "my-clipboard-app.firebaseapp.com",
   databaseURL: "https://my-clipboard-app-default-rtdb.firebaseio.com",
   projectId: "my-clipboard-app",
@@ -16,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const notesRef = ref(db, 'notes');
 
-// فەنکشن بۆ ڕێکخستنی کات (چارەسەری ژمارە درێژەکەش دەکات)
+// فەنکشن بۆ گۆڕینی کات (چارەسەری ژمارە درێژەکە)
 function formatNoteTime(timeData) {
     if (!timeData) return "پێشتر";
     if (!isNaN(timeData) && timeData.toString().length > 10) {
@@ -28,13 +29,13 @@ function formatNoteTime(timeData) {
     return timeData;
 }
 
-// فەنکشن بۆ لینکەکان
+// نیشاندانی لینکەکان بە شێوەی کلیک لێکراو
 function formatText(text) {
     const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-    return text.replace(urlPattern, (url) => `<a href="${url}" target="_blank" style="color: #1a73e8; text-decoration: underline;">${url}</a>`);
+    return text.replace(urlPattern, (url) => `<a href="${url}" target="_blank" class="note-link">${url}</a>`);
 }
 
-// کرداری پاشەکەوت و کۆپی
+// پاشەکەوتکردنی نۆتی نوێ
 window.saveAndCopy = function() {
     const input = document.getElementById('textInput');
     const text = input.value;
@@ -51,17 +52,15 @@ window.saveAndCopy = function() {
     });
 };
 
-// فەنکشنی سڕینەوە (بەستراوە بە window بۆ ئەوەی لە HTML کار بکات)
+// فەنکشنی سڕینەوە (گرنگ: بەستراوە بە window)
 window.deleteNote = function(key) {
-    if (confirm("ئایا دڵنیای لە سڕینەوەی ئەم نۆتە؟")) {
+    if (confirm("ئایا دڵنیای لە سڕینەوە؟")) {
         const itemRef = ref(db, 'notes/' + key);
-        remove(itemRef).catch((error) => {
-            alert("سڕینەوە سەرکەوتوو نەبوو: " + error.message);
-        });
+        remove(itemRef).catch((error) => alert("Error: " + error.message));
     }
 };
 
-// نیشاندانی داتا کاتێک زیاد دەبێت
+// کاتێک نۆتێک زیاد دەبێت یان لاپەڕە دەکرێتەوە
 onChildAdded(notesRef, (snapshot) => {
     const list = document.getElementById('copyList');
     const data = snapshot.val();
@@ -82,7 +81,7 @@ onChildAdded(notesRef, (snapshot) => {
     list.prepend(li);
 });
 
-// وندکردن لەسەر شاشە کاتێک لە سێرڤەر دەسڕێتەوە
+// کاتێک لە سێرڤەر دەسڕێتەوە، لێرەش وند دەبێت
 onChildRemoved(notesRef, (snapshot) => {
     const el = document.getElementById(snapshot.key);
     if(el) el.remove();
